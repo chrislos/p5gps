@@ -1,59 +1,60 @@
+let lastPos = null;
+let errMsg = "";
+let requested = false;
 
 function setup() {
   createCanvas(400, 400);
-	frameRate(5);
-	
+  textSize(18);
 }
 
 function draw() {
   background(220);
-	
-		navigator.geolocation.getCurrentPosition(
 
-    // Success callback
-    function(position) {
-			background(220);
-			textSize(32);
-			text("latitude: " + position.coords.latitude, 5, 100);
-			text("longitude: " + position.coords.longitude, 5, 200);
+  if (!requested) {
+    text("Tippe, um GPS zu erlauben", 10, 40);
+    return;
+  }
 
-        /*
-        position is an object containing various information about
-        the acquired device location:
+  if (errMsg) {
+    text("GPS Fehler: " + errMsg, 10, 40);
+  } else if (lastPos) {
+    text("latitude: " + lastPos.coords.latitude, 10, 120);
+    text("longitude: " + lastPos.coords.longitude, 10, 160);
+  } else {
+    text("Warte auf Position ...", 10, 40);
+  }
+}
 
-        position = {
-            coords: {
-                latitude - Geographical latitude in decimal degrees.
-                longitude - Geographical longitude in decimal degrees. 
-                altitude - Height in meters relative to sea level.
-                accuracy - Possible error margin for the coordinates in meters. 
-                altitudeAccuracy - Possible error margin for the altitude in meters. 
-                heading - The direction of the device in degrees relative to north. 
-                speed - The velocity of the device in meters per second.
-            }
-            timestamp - The time at which the location was retrieved.
-        }
-        */
+// iOS Safari zählt touchStarted als User Gesture
+function touchStarted() {
+  requestGPS();
+  return false;
+}
 
+function mousePressed() {
+  requestGPS();
+}
+
+function requestGPS() {
+  if (requested) return;
+  requested = true;
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      lastPos = position;
+      errMsg = "";
+      // optional: regelmäßig nachladen, aber nicht im draw
+      setInterval(() => {
+        navigator.geolocation.getCurrentPosition(
+          p => lastPos = p,
+          e => errMsg = e.message,
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+      }, 5000);
     },
-
-    // Optional error callback
-    function(error){
-
-        /* 
-        In the error object is stored the reason for the failed attempt:
-
-        error = {
-            code - Error code representing the type of error 
-                    1 - PERMISSION_DENIED
-                    2 - POSITION_UNAVAILABLE
-                    3 - TIMEOUT
-
-            message - Details about the error in human-readable format.
-        }
-        */
-
-    }
-);
-	
+    (error) => {
+      errMsg = error.message;
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
 }
