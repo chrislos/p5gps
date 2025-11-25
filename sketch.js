@@ -31,6 +31,7 @@ function touchStarted() {
   return false;
 }
 
+//
 function mousePressed() {
   requestGPS();
 }
